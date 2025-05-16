@@ -3,7 +3,7 @@ name: Deploy to Oracle Cloud
 on:
   push:
     branches:
-      - master
+      - master  # or use "main" if that's your default branch
 
 jobs:
   deploy:
@@ -18,18 +18,25 @@ jobs:
         with:
           ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
 
-      - name: Deploy to Server
+      - name: Deploy to Oracle Cloud Instance
         env:
           SERVER_USER: ${{ secrets.SERVER_USER }}
           SERVER_IP: ${{ secrets.SERVER_IP }}
           APP_DIR: ${{ secrets.APP_DIR }}
+          REPO: git@github.com:Alexanderlecky/odoo-18-docker-compose.git
         run: |
-          ssh -o StrictHostKeyChecking=no $SERVER_USER@$SERVER_IP "
-            mkdir -p $APP_DIR &&
-            cd $APP_DIR &&
-            git pull origin main &&
-            docker-compose down &&
-            docker-compose pull &&
-            docker-compose up -d --build
-          "
+          ssh -o StrictHostKeyChecking=no $SERVER_USER@$SERVER_IP << 'EOF'
+            # Ensure the directory exists
+            mkdir -p $APP_DIR
+            cd $APP_DIR
 
+            # Clone repo if not already present
+            if [ ! -d ".git" ]; then
+              git clone $REPO .
+            else
+              git pull origin master  # or main
+            fi
+
+            # Optional: Restart your service / run build steps here
+            # docker-compose up -d --build
+          EOF
