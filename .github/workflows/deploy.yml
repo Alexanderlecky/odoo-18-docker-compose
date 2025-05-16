@@ -3,10 +3,11 @@ name: Deploy Ubuntu Server Project
 on:
   push:
     branches:
-      - master  # Adjust if using a different branch
+      - master
 
 jobs:
   deploy:
+    name: Deploy to Docker Server
     runs-on: ubuntu-latest
 
     steps:
@@ -18,13 +19,17 @@ jobs:
         with:
           ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
 
-      - name: Deploy to Docker Server
+      - name: Deploy application via SSH
         env:
           SERVER_USER: ${{ secrets.SERVER_USER }}
           SERVER_IP: ${{ secrets.SERVER_IP }}
           APP_DIR: ${{ secrets.APP_DIR }}
+          GIT_REPO: ${{ secrets.GIT_REPO }}  # Optional if needed in deployment
         run: |
           ssh -o StrictHostKeyChecking=no $SERVER_USER@$SERVER_IP "
+            if [ ! -d $APP_DIR ]; then
+              git clone git@github.com:Alexanderlecky/odoo-18-docker-compose.git $APP_DIR
+            fi
             cd $APP_DIR &&
             git pull origin main &&
             docker-compose down &&
