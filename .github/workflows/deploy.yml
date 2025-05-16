@@ -22,7 +22,6 @@ jobs:
       - name: Debug SSH Agent
         run: |
           ssh-add -l || echo "No SSH keys added"
-          ssh -T git@github.com
 
       - name: Deploy application via SSH
         env:
