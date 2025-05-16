@@ -1,42 +1,43 @@
-name: Deploy to Oracle Cloud
+name: Deploy Docker App to Oracle Cloud
 
 on:
   push:
     branches:
-      - master  # or use "main" if that's your default branch
+      - main
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout code
+      - name: Checkout repo
         uses: actions/checkout@v2
 
-      - name: Add SSH private key to agent
+      - name: Add SSH private key
         uses: webfactory/ssh-agent@v0.5.3
         with:
           ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
 
-      - name: Deploy to Oracle Cloud Instance
+      - name: Deploy to Oracle Cloud
         env:
           SERVER_USER: ${{ secrets.SERVER_USER }}
           SERVER_IP: ${{ secrets.SERVER_IP }}
           APP_DIR: ${{ secrets.APP_DIR }}
-          REPO: git@github.com:Alexanderlecky/odoo-18-docker-compose.git
+          GIT_REPO: git@github.com:Alexanderlecky/odoo-18-docker-compose.git
         run: |
           ssh -o StrictHostKeyChecking=no $SERVER_USER@$SERVER_IP << 'EOF'
-            # Ensure the directory exists
+            set -e
             mkdir -p $APP_DIR
             cd $APP_DIR
 
-            # Clone repo if not already present
             if [ ! -d ".git" ]; then
-              git clone $REPO .
+              git clone $GIT_REPO .
             else
-              git pull origin master  # or main
+              git pull origin main
             fi
 
-            # Optional: Restart your service / run build steps here
-            # docker-compose up -d --build
+            docker-compose down
+            docker-compose build
+            docker-compose up -d
           EOF
+
