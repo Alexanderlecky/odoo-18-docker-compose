@@ -3,41 +3,32 @@ name: Deploy Ubuntu Server Project
 on:
   push:
     branches:
-      - master
+      - master  # Change to your main branch
 
 jobs:
   deploy:
-    name: Deploy to Docker Server
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
-
+        
       - name: Add SSH private key to agent
         uses: webfactory/ssh-agent@v0.5.3
         with:
-          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}  # Ensure this secret contains the new private key
 
-      - name: Debug SSH Agent
-        run: |
-          ssh-add -l || echo "No SSH keys added"
-
-      - name: Deploy application via SSH
+      - name: Deploy to Server
         env:
           SERVER_USER: ${{ secrets.SERVER_USER }}
           SERVER_IP: ${{ secrets.SERVER_IP }}
           APP_DIR: ${{ secrets.APP_DIR }}
-          GIT_REPO: ${{ secrets.GIT_REPO }}
         run: |
           ssh -o StrictHostKeyChecking=no $SERVER_USER@$SERVER_IP "
-            if [ ! -d $APP_DIR ]; then
-              git clone git@github.com:Alexanderlecky/odoo-18-docker-compose.git $APP_DIR
-            fi
             cd $APP_DIR &&
             git pull origin main &&
             docker-compose down &&
             docker-compose pull &&
             docker-compose up -d --build
           "
-
+        
